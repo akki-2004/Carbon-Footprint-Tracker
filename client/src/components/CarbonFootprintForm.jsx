@@ -6,6 +6,7 @@ import EnergyForm from "./EnergyForm";
 import WaterForm from "./WaterForm";
 import WasteForm from "./WasteForm";
 import SustainabilityForm from "./SustainabilityForm";
+import CarbonFootprintIntro from "./CarbonFootprintIntro";
 
 const categories = ["Transport", "Food", "Energy", "Water", "Waste", "Sustainability"];
 
@@ -13,7 +14,10 @@ export default function CarbonFootprintForm() {
   const [currentCategory, setCurrentCategory] = useState(0);
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
-
+  const token = localStorage.getItem("token");
+  if (!token) {
+    return <CarbonFootprintIntro />;
+  }
   const handleChange = (category, question, value) => {
     setAnswers((prev) => ({
       ...prev,

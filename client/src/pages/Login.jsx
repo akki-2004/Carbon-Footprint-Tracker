@@ -21,7 +21,7 @@ const Login = () => {
             );
 
             if (response.data.success) {
-                alert('Login successful!');
+                // alert('Login successful!');
                 localStorage.setItem('user', JSON.stringify(response.data.user));
                 localStorage.setItem('token', response.data.token);
 
@@ -29,9 +29,9 @@ const Login = () => {
                     alert('Your email is not verified. Redirecting to email verification.');
                     return navigate('/email-verify');
                 }
-
                 localStorage.setItem('authToken', response.data.token);
-                navigate('/');
+                navigate('/load');
+              
             }
         } catch (err) {
             console.error('Full Axios Error:', err);
