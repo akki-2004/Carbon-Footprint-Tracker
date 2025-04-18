@@ -1,21 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Modal from '../components/Modal'; // Import the Modal component
 
 const EmailVerify = () => {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [modal, setModal] = useState({ visible: false, message: '', type: '' }); // Modal state
   const navigate = useNavigate();
 
   // Automatically send OTP when page loads
   useEffect(() => {
     axios
       .post('http://localhost:5000/api/auth/send-verify-otp', {}, { withCredentials: true })
-      .then(() => setMessage('OTP sent to your email.'))
-      .catch((err) =>
-        setError(err.response?.data?.message || 'Failed to send OTP. Please try again.')
-      );
+      .then(() => {
+        setModal({
+          visible: true,
+          message: 'OTP sent to your email.',
+          type: 'success',
+        });
+      })
+      .catch((err) => {
+        setModal({
+          visible: true,
+          message: err.response?.data?.message || 'Failed to send OTP. Please try again.',
+          type: 'error',
+        });
+      });
   }, []);
 
   const handleVerify = async (e) => {
@@ -31,12 +43,24 @@ const EmailVerify = () => {
       );
 
       if (response.data.success) {
-        alert('Email verified successfully! You can now login.');
-        navigate('/login');
+        setModal({
+          visible: true,
+          message: 'Email verified successfully! You can now login.',
+          type: 'success',
+        });
+        setTimeout(() => navigate('/login'), 2000); // Redirect after 2 seconds
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid OTP. Try again.');
+      setModal({
+        visible: true,
+        message: err.response?.data?.message || 'Invalid OTP. Try again.',
+        type: 'error',
+      });
     }
+  };
+
+  const closeModal = () => {
+    setModal({ visible: false, message: '', type: '' }); // Close modal
   };
 
   return (
@@ -66,6 +90,9 @@ const EmailVerify = () => {
           </button>
         </form>
       </div>
+
+      {/* Modal */}
+      {modal.visible && <Modal message={modal.message} type={modal.type} onClose={closeModal} />}
     </div>
   );
 };

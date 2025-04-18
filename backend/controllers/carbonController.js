@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const moment = require("moment-timezone"); // For timezone handling
 const CarbonFootprint = require("../models/CarbonFootprint");
-const { calculateGreenPointsFromAnswers } = require("../utils/calculateEmissions");
+const { calculateDailyStatsFromAnswers } = require("../utils/calculateEmissions");
 
 // 📌 Function to calculate and store carbon footprint
 async function calculateCarbonFootprint(req, res) {
@@ -27,53 +27,67 @@ async function calculateCarbonFootprint(req, res) {
             sustainability: sustainability || 0,
         };
 
-        const greenPoints = calculateGreenPointsFromAnswers(userData);
-        console.log("🔍 Calculated Green Points:", greenPoints);
+        // Calculate emissions and green points
+        const { totalEmission, totalGreenPoints } = calculateDailyStatsFromAnswers(userData);
+        console.log("🔍 Total Emission:", totalEmission);  // Check if totalEmission is correct
+        console.log("🔍 Total Green Points:", totalGreenPoints);  // Check if totalGreenPoints is correct
 
-        if (typeof greenPoints !== "number" || isNaN(greenPoints)) {
+        if (typeof totalGreenPoints !== "number" || isNaN(totalGreenPoints)) {
             console.log("❌ Invalid green points calculation.");
             return res.status(400).json({ success: false, message: "Invalid green points calculation." });
         }
 
         const todayDate = moment().tz("Asia/Kolkata").format("YYYY-MM-DD"); // Get today's date in IST
 
+        // Find the user entry in the database
         let userEntry = await CarbonFootprint.findOne({ userId });
 
         if (!userEntry) {
-            // Create a new entry if none exists
+            // If no entry exists, create a new one
             userEntry = new CarbonFootprint({
                 userId,
-                greenPoints: [{ date: todayDate, points: greenPoints }],
-                totalGreenPoints: greenPoints,
+                greenPoints: [{ date: todayDate, points: totalGreenPoints }],
+                totalGreenPoints: totalGreenPoints,
+                dailyEmissions: [{ date: todayDate, emission: totalEmission }],
             });
         } else {
-            // Check if today's entry exists
+            // Check if the user already submitted for today
             const existingEntry = userEntry.greenPoints.find(entry => entry.date === todayDate);
 
             if (existingEntry) {
-                console.log("⚠️ Entry already exists for today. Updating the points...");
-                existingEntry.points += greenPoints; // Update today's points
-            } else {
-                // Keep only the last 7 days of records
-                if (userEntry.greenPoints.length >= 7) {
-                    userEntry.greenPoints.shift(); // Remove the oldest record
-                }
-                userEntry.greenPoints.push({ date: todayDate, points: greenPoints });
+                console.log("⚠️ Entry already exists for today. Rejecting the request.");
+                return res.status(400).json({
+                    success: false,
+                    message: "You can only submit once per day.",
+                });
             }
 
-            // Update total green points
-            userEntry.totalGreenPoints += greenPoints;
+            // Add new data for today if no entry exists for today
+            userEntry.greenPoints.push({ date: todayDate, points: totalGreenPoints });
+            userEntry.dailyEmissions.push({ date: todayDate, emission: totalEmission });
+            userEntry.totalGreenPoints += totalGreenPoints;
         }
 
+        // Log dailyEmissions before saving
+        console.log("Daily Emissions before saving:", userEntry.dailyEmissions);
+
+        // Save the user entry to the database
         await userEntry.save();
         console.log("✅ Successfully Saved to MongoDB!", userEntry);
-        return res.status(201).json({ success: true, message: "Carbon footprint recorded!", data: userEntry });
+
+        return res.status(201).json({
+            success: true,
+            message: "Carbon footprint recorded!",
+            data: userEntry,
+        });
 
     } catch (error) {
         console.error("❌ Server Error:", error);
         return res.status(500).json({ success: false, message: "Server error." });
     }
 }
+
+
 
 // 📌 Function to add green points (Ensures single submission per day)
 const addGreenPoints = async (req, res) => {
@@ -104,8 +118,11 @@ const addGreenPoints = async (req, res) => {
             }
 
             // Add today's entry
-            userFootprint.greenPoints.push({ date: todayDate, points });
+            userEntry.greenPoints.push({ date: todayDate, points: totalGreenPoints });
+            userEntry.dailyEmissions.push({ date: todayDate, emission: totalEmission });
             userFootprint.totalGreenPoints += points;
+            console.log("Daily Emissions before saving:", userEntry.dailyEmissions);
+
         }
 
         await userFootprint.save();

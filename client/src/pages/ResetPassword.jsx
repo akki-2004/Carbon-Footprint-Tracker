@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Modal from '../components/Modal'; // Import the Modal component
 
 const ResetPassword = () => {
   const [form, setForm] = useState({ email: '', otp: '', newPassword: '' });
   const [error, setError] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+  const [modal, setModal] = useState({ visible: false, message: '', type: '' }); // State for modal
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -14,29 +16,47 @@ const ResetPassword = () => {
 
   const sendOtp = async () => {
     setError('');
-
     try {
       await axios.post('http://localhost:5000/api/auth/send-reset-otp', { email: form.email });
-      alert('OTP sent to your email.');
+      setModal({
+        visible: true,
+        message: 'OTP sent to your email.',
+        type: 'success',
+      });
       setOtpSent(true);
     } catch (err) {
-      setError(err.response?.data?.message || 'Error sending OTP.');
+      setModal({
+        visible: true,
+        message: err.response?.data?.message || 'Error sending OTP.',
+        type: 'error',
+      });
     }
   };
 
   const handleReset = async (e) => {
     e.preventDefault();
     setError('');
-
     try {
-      const response = await axios.post('http://localhost:4000/api/auth/reset-password', form);
+      const response = await axios.post('http://localhost:5000/api/auth/reset-password', form);
       if (response.data.success) {
-        alert('Password reset successful! Login now.');
-        navigate('/login');
+        setModal({
+          visible: true,
+          message: 'Password reset successful! Login now.',
+          type: 'success',
+        });
+        setTimeout(() => navigate('/login'), 2000); // Navigate after 2 seconds
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Error resetting password.');
+      setModal({
+        visible: true,
+        message: err.response?.data?.message || 'Error resetting password.',
+        type: 'error',
+      });
     }
+  };
+
+  const closeModal = () => {
+    setModal({ visible: false, message: '', type: '' }); // Close modal
   };
 
   return (
@@ -74,6 +94,9 @@ const ResetPassword = () => {
           )}
         </form>
       </div>
+
+      {/* Modal */}
+      {modal.visible && <Modal message={modal.message} type={modal.type} onClose={closeModal} />}
     </div>
   );
 };

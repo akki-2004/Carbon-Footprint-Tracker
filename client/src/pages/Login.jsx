@@ -1,12 +1,13 @@
-// frontend/src/components/Login.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Modal from '../components/Modal'; // Import the Modal component
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [modal, setModal] = useState({ visible: false, message: '', type: '' }); // State for modal
     const navigate = useNavigate();
 
     const handleLogin = async (e) => {
@@ -21,24 +22,41 @@ const Login = () => {
             );
 
             if (response.data.success) {
-                // alert('Login successful!');
                 localStorage.setItem('user', JSON.stringify(response.data.user));
                 localStorage.setItem('token', response.data.token);
 
                 if (!response.data.user.isAccountVerified) {
-                    alert('Your email is not verified. Redirecting to email verification.');
+                    setModal({
+                        visible: true,
+                        message: 'Your email is not verified. Redirecting to email verification.',
+                        type: 'error',
+                    });
                     return navigate('/email-verify');
                 }
+
                 localStorage.setItem('authToken', response.data.token);
-                navigate('/load');
-              
+                setModal({
+                    visible: true,
+                    message: 'Login successful! Redirecting...',
+                    type: 'success',
+                });
+
+                setTimeout(() => navigate('/load'), 2000); // Navigate after 2 seconds
             }
         } catch (err) {
             console.error('Full Axios Error:', err);
             console.error('Error Response:', err.response);
-            setError(err.response?.data?.message || 'Login failed. Try again.');
+
+            setModal({
+                visible: true,
+                message: err.response?.data?.message || 'Login failed. Try again.',
+                type: 'error',
+            });
         }
-        
+    };
+
+    const closeModal = () => {
+        setModal({ visible: false, message: '', type: '' }); // Close modal
     };
 
     return (
@@ -46,7 +64,7 @@ const Login = () => {
             className="flex justify-center items-center min-h-screen text-white"
             style={{ backgroundImage: "url('/LOGIN1.png')", backgroundSize: "cover", backgroundPosition: "center" }}
         >
-            <div className="bg-black bg-opacity-60 p-12 rounded-lg shadow-lg w-[-400px] mt-[-200px]">
+            <div className="bg-black bg-opacity-60 p-12 rounded-lg shadow-lg w-[450px] mt-[-200px]">
                 <h2 className="text-5xl font-bold mb-8 text-center">Login</h2>
 
                 {error && <p className="text-red-400 text-center mb-4">{error}</p>}
@@ -84,9 +102,11 @@ const Login = () => {
                     Forgot password? <a href="/reset-password" className="text-blue-400">Reset</a>
                 </p>
             </div>
+
+            {/* Modal */}
+            {modal.visible && <Modal message={modal.message} type={modal.type} onClose={closeModal} />}
         </div>
     );
 };
 
 export default Login;
-

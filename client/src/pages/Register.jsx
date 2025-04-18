@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Modal from '../components/Modal'; // Import the Modal component
 
 const Register = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
+  const [modal, setModal] = useState({ visible: false, message: '', type: '' }); // State for modal
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -21,14 +23,29 @@ const Register = () => {
         localStorage.setItem('user', JSON.stringify(response.data.user));
         localStorage.setItem('token', response.data.token);
 
-        alert('Registration successful! Please verify your email.');
-        navigate('/email-verify');
+        // Show success modal
+        setModal({
+          visible: true,
+          message: 'Registration successful! Please verify your email.',
+          type: 'success',
+        });
+
+        setTimeout(() => navigate('/email-verify'), 2000); // Navigate after 2 seconds
       }
     } catch (err) {
       console.log(err);
       
-      setError(err.response?.data?.message || 'Registration failed.');
+      // Show error modal
+      setModal({
+        visible: true,
+        message: err.response?.data?.message || 'Registration failed.',
+        type: 'error',
+      });
     }
+  };
+
+  const closeModal = () => {
+    setModal({ visible: false, message: '', type: '' }); // Close modal
   };
 
   return (
@@ -60,6 +77,9 @@ const Register = () => {
           Already have an account? <a href="/login" className="text-blue-400">Login</a>
         </p>
       </div>
+
+      {/* Modal */}
+      {modal.visible && <Modal message={modal.message} type={modal.type} onClose={closeModal} />}
     </div>
   );
 };
