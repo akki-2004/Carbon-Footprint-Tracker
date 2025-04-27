@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+torch
+accelerate
+sentence-transformers>=2.2.2
+faiss-cpu
+numpy>=1.26.0
+transformers==4.38.2
