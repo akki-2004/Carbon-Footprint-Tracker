@@ -1,0 +1,1 @@
+Place your 'data.txt' file in this folder. Each line will be treated as a knowledge chunk for retrieval.
