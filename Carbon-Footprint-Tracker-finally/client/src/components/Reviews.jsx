@@ -1,4 +1,3 @@
-// src/components/Reviews.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
 
@@ -27,10 +26,8 @@ export default function Reviews() {
   };
 
   return (
-    <div className="p-6 bg-gray-100 !text-gray-900 rounded-lg shadow">
-      <h3 className="mb-4 text-xl font-semibold !text-gray-900">
-        Write a Review
-      </h3>
+    <div className="p-6 bg-gray-900 text-white rounded-lg shadow">
+      <h3 className="mb-4 text-xl font-semibold text-white">Write a Review</h3>
       <textarea
         value={reviewText}
         onChange={(e) => setReviewText(e.target.value)}
@@ -38,12 +35,11 @@ export default function Reviews() {
         className="
           w-full h-32
           p-3
-          border border-gray-300
-          rounded-lg
-          mb-4
-          !bg-white
-          !text-gray-900
-          !placeholder-gray-500
+          bg-gray-800
+          text-white
+          placeholder-gray-400
+          border border-gray-600
+          rounded-lg mb-4
           focus:outline-none focus:ring-2 focus:ring-green-400
         "
       />
