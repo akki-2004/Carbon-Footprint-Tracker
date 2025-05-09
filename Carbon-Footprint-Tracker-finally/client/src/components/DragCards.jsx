@@ -1,132 +1,106 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { twMerge } from "tailwind-merge";
 
 export const DragCards = () => {
   return (
     <section className="relative grid min-h-screen w-full place-content-center overflow-hidden bg-neutral-950">
-      <h2 className="relative z-0 text-[20vw] font-black text-neutral-800 md:text-[200px]">
+      <h2 className="relative z-0 text-[20vw] font-black text-neutral-800 md:text-[200px] pointer-events-none select-none">
         ENGAGE<span className="text-indigo-500">.</span>
       </h2>
-      <h3 style={{
-        position: 'fixed',
-        bottom: '20px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        color: 'white',
-        fontSize: '1.25rem',
-        zIndex: 50
-        }}>
-        Drag The Photos
-        </h3>
+
+      <h3
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          color: 'white',
+          fontSize: '1.25rem',
+          zIndex: 50,
+        }}
+      >
+        Wait for it... 🚀
+      </h3>
 
       <Cards />
     </section>
   );
 };
 
+const flyOutDirections = [
+  { x: "-120vw", y: "-100vh" },
+  { x: "100vw", y: "-90vh" },
+  { x: "-110vw", y: "100vh" },
+  { x: "120vw", y: "110vh" },
+  { x: "0vw", y: "-120vh" },
+  { x: "100vw", y: "0vh" },
+];
+
+const getRandomPosition = () => {
+  const top = Math.floor(Math.random() * 60) + 10;  // 10% to 70%
+  const left = Math.floor(Math.random() * 70) + 10; // 10% to 80%
+  return { top: `${top}%`, left: `${left}%` };
+};
+
 const Cards = () => {
-  const containerRef = useRef(null);
+  const cardConfigs = [
+    { src: "../reviews/img1.jpg", rotate: "6deg", size: "w-36 md:w-56" },
+    { src: "../reviews/img2.jpg", rotate: "12deg", size: "w-24 md:w-48" },
+    { src: "../reviews/img3.jpg", rotate: "-6deg", size: "w-52 md:w-80" },
+    { src: "../reviews/img4.jpg", rotate: "8deg", size: "w-48 md:w-72" },
+    { src: "../reviews/img5.jpg", rotate: "18deg", size: "w-40 md:w-64" },
+    { src: "../reviews/img6.jpg", rotate: "-3deg", size: "w-24 md:w-48" },
+  ];
 
   return (
-    <div className="absolute inset-0 z-10" ref={containerRef}>
-      <Card
-        containerRef={containerRef}
-        src="../reviews/img1.jpg"
-        alt="Image 1"
-        rotate="6deg"
-        top="20%"
-        left="25%"
-        className="w-36 md:w-56"
-      />
-      <Card
-        containerRef={containerRef}
-        src="../reviews/img2.jpg"
-        alt="Image 2"
-        rotate="12deg"
-        top="45%"
-        left="60%"
-        className="w-24 md:w-48"
-      />
-      <Card
-        containerRef={containerRef}
-        src="../reviews/img3.jpg"
-        alt="Image 3"
-        rotate="-6deg"
-        top="20%"
-        left="40%"
-        className="w-52 md:w-80"
-      />
-      <Card
-        containerRef={containerRef}
-        src="../reviews/img4.jpg"
-        alt="Image 4"
-        rotate="8deg"
-        top="50%"
-        left="40%"
-        className="w-48 md:w-72"
-      />
-      <Card
-        containerRef={containerRef}
-        src="../reviews/img5.jpg"
-        alt="Image 5"
-        rotate="18deg"
-        top="20%"
-        left="65%"
-        className="w-40 md:w-64"
-      />
-      <Card
-        containerRef={containerRef}
-        src="../reviews/img6.jpg"
-        alt="Image 6"
-        rotate="-3deg"
-        top="35%"
-        left="55%"
-        className="w-24 md:w-48"
-      />
+    <div className="absolute inset-0 z-10">
+      {cardConfigs.map((card, index) => (
+        <FlyOutCard key={index} index={index} {...card} />
+      ))}
     </div>
   );
 };
 
-const Card = ({ containerRef, src, alt, top, left, rotate, className }) => {
-  const [zIndex, setZIndex] = useState(0);
+const FlyOutCard = ({ src, alt = "", rotate, size, index }) => {
+  const [flyAway, setFlyAway] = useState(false);
+  const [position] = useState(getRandomPosition());
 
-  const updateZIndex = () => {
-    const els = document.querySelectorAll(".drag-elements");
-
-    let maxZIndex = -Infinity;
-
-    els.forEach((el) => {
-      let zIndex = parseInt(
-        window.getComputedStyle(el).getPropertyValue("z-index")
-      );
-
-      if (!isNaN(zIndex) && zIndex > maxZIndex) {
-        maxZIndex = zIndex;
-      }
-    });
-
-    setZIndex(maxZIndex + 1);
-  };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFlyAway(true);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <motion.img
-      onMouseDown={updateZIndex}
-      style={{
-        top,
-        left,
+      initial={{
+        position: "absolute",
+        top: position.top,
+        left: position.left,
         rotate,
-        zIndex,
+      }}
+      animate={
+        flyAway
+          ? {
+              x: flyOutDirections[index % flyOutDirections.length].x,
+              y: flyOutDirections[index % flyOutDirections.length].y,
+              opacity: 0,
+            }
+          : {}
+      }
+      transition={{
+        duration: 1.5,
+        ease: "easeInOut",
       }}
       className={twMerge(
-        "drag-elements absolute w-48 bg-neutral-200 p-1 pb-4",
-        className
+        "rounded-xl shadow-lg bg-neutral-200 p-1 pb-4",
+        size
       )}
       src={src}
       alt={alt}
-      drag
-      dragConstraints={containerRef}
-      dragElastic={0.65}
     />
   );
 };
+
